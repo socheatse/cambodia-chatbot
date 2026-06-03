@@ -1,23 +1,45 @@
 import streamlit as st
 import numpy as np
 import pickle
-from tensorflow.keras.models import load_model
+import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # ==============================
-# Load artifacts
+# Load configuration first
 # ==============================
 
-model = tf.keras.models.load_model("model.h5", compile=False)
-
-with open("tokenizer.pkl", "rb") as f:  # ✅ Fixed
-    tokenizer = pickle.load(f)
-
-with open("config.pkl", "rb") as f:  # ✅ Fixed
+with open("config.pkl", "rb") as f:
     config = pickle.load(f)
 
 max_len = config["max_len"]
 
+# We need the tokenizer to know how big your vocabulary is for the model structure
+with open("tokenizer.pkl", "rb") as f:
+    tokenizer = pickle.load(f)
+
+vocab_size = len(tokenizer.word_index) + 1
+
+# ==============================
+# Recreate Architecture & Load Weights
+# ==============================
+
+def build_model():
+    # Recreating your SimpleRNN architecture shell
+    model = tf.keras.Sequential([
+        tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=64, input_length=max_len),
+        tf.keras.layers.SimpleRNN(64, return_sequences=True),
+        tf.keras.layers.Dense(vocab_size, activation='softmax')
+    ])
+    return model
+
+@st.cache_resource
+def load_my_model():
+    model = build_model()
+    # Safely load just the numbers (weights) to bypass the Keras .h5 version crash
+    model.load_weights("model_weights.weights.h5")
+    return model
+
+model = load_my_model()
 
 # ==============================
 # Response function
@@ -32,12 +54,15 @@ def generate_response(text):
 
     result = []
     for idx in pred:
+        # Skip the padding index (0) so your chatbot doesn't spit out blank space words
+        if idx == 0:
+            continue
         for word, index in tokenizer.word_index.items():
             if index == idx:
                 result.append(word)
                 break
 
-    return " ".join(result)
+    return " ".join(result) if result else "I'm not sure how to respond to that."
 
 
 # ==============================
