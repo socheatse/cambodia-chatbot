@@ -8,7 +8,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 # Load artifacts
 # ==============================
 
-model = load_model("model.h5")  # ✅ Fixed
+model = tf.keras.models.load_model("model.h5", compile=False)
 
 with open("tokenizer.pkl", "rb") as f:  # ✅ Fixed
     tokenizer = pickle.load(f)
