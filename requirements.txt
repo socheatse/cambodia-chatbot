@@ -1,4 +1,7 @@
-streamlit==1.37.0
+streamlit
 pandas
 numpy
-tensorflow-cpu
+scikit-learn
+matplotlib
+tensorflow>=2.13.0
+protobuf<4.21
